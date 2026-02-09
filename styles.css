@@ -205,9 +205,10 @@ body{
 
 .card-item .right{
   text-align:right;
-  min-width:92px;
+  min-width:120px;
   flex:0 0 auto;
 }
+
 .card-item .label{
   font-weight:900;
   margin:0;
@@ -443,4 +444,50 @@ textarea{
   box-shadow:0 10px 26px rgba(0,0,0,.35);
   z-index:9999;
   display:none;
+}
+
+/* Entidad en tarjetas */
+.card-item .entity{
+  margin:4px 0 0;
+  font-weight:900;
+  font-size:12px;
+  color:#111;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+/* Calendario horizontal */
+.calendar-h{
+  background:var(--soft);
+  border-radius:22px;
+  padding:10px;
+  margin-top:12px;
+  overflow:hidden;
+}
+.calendar-row{
+  display:flex;
+  gap:10px;
+  overflow:auto;
+  padding:6px 2px;
+}
+.calendar-row::-webkit-scrollbar{ height:10px; }
+.calendar-row::-webkit-scrollbar-thumb{ background:#c9c9c9; border-radius:10px; }
+
+.day-card{
+  flex:0 0 140px;
+  background:#d7d7d7;
+  border-radius:16px;
+  padding:8px;
+  min-height:260px;
+  overflow:hidden;
+}
+.day-card .day-head{
+  background:#cfcfcf;
+  border-radius:12px;
+  font-weight:1000;
+  text-align:center;
+  padding:8px 0;
+  margin-bottom:8px;
+  font-size:16px;
 }

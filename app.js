@@ -216,10 +216,12 @@ function renderDiscountCard(d) {
     <div class="right">
       <p class="label">Descuento</p>
       <p class="value">${escapeHTML(String(d.discountValue || ""))}</p>
+      <p class="entity">${escapeHTML(String(d.entity || ""))}</p>
     </div>
   `;
   return wrap;
 }
+
 
 function renderCalendar(discounts) {
   const dayIds = ["Lu","Ma","Mi","Ju","Vi","Sa","Do"];
@@ -333,7 +335,12 @@ const ENTITIES = [
   "SCOTIABANK"
 ];
 
-const DISCOUNT_PRESETS = ["2x1", "3x2", "15%", "30%"];
+const DISCOUNT_PRESETS = [
+  "2x1", "3x2",
+  "10%", "15%", "20%", "25%", "30%",
+  "40%", "50%", "70%", "2x1", "3x2"
+];
+
 
 const PRESET_IMAGES = [
   `data:image/svg+xml;utf8,${encodeURIComponent(svgPreset("#18b7c9","#ff7a7a","#fff"))}`,
