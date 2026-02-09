@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Configuración</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body data-page="config">
+  <div class="page">
+    <div class="phone">
+
+      <div class="topbar">
+        <button class="btn-pill" id="configBack">Volver</button>
+
+        <div class="icon-row">
+          <button class="icon-btn" id="btnHelp" aria-label="Ayuda"><span data-icon="help"></span></button>
+          <button class="icon-btn" id="btnBell" aria-label="Notificaciones"><span data-icon="bell"></span></button>
+          <button class="icon-btn dark" id="btnUser" aria-label="Login"><span data-icon="user"></span></button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="h1">Configuración</div>
+
+        <div class="section" style="padding:16px;">
+          <div class="section-title" style="font-size:44px;">Nuevo descuento</div>
+
+          <div class="image-picker">
+            <div class="thumb">
+              <img id="thumbImg" alt="tienda"/>
+            </div>
+
+            <div style="flex:1;">
+              <div class="label" style="margin:0 0 6px;">Imagen tienda</div>
+              <input id="imgFile" type="file" accept="image/*"/>
+            </div>
+          </div>
+
+          <div class="label" style="margin-top:10px;">Imágenes precargadas</div>
+          <div class="preset-row" id="presetRow"></div>
+
+          <div class="label">Nombre tienda</div>
+          <input id="storeName" type="text" placeholder="Ej: Tienda x"/>
+
+          <div class="label">Descripción</div>
+          <textarea id="description" placeholder="Detalle de la oferta..."></textarea>
+
+          <div class="two-cols">
+            <div>
+              <div class="label">Descuento</div>
+              <input id="discountValue" type="text" placeholder="Ej: 30% / 2x1 / -500$"/>
+              <div style="margin-top:8px;">
+                <select id="discountPreset">
+                  <option value="" selected>Elegir opción…</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <div class="label">Entidad</div>
+              <select id="entity"></select>
+            </div>
+          </div>
+
+          <div class="label" style="margin-top:8px;">¿Cuándo?</div>
+          <div class="inline">
+            <button class="day-toggle" id="day-Lu" type="button">Lu</button>
+            <button class="day-toggle" id="day-Ma" type="button">Ma</button>
+            <button class="day-toggle" id="day-Mi" type="button">Mi</button>
+            <button class="day-toggle" id="day-Ju" type="button">Ju</button>
+            <button class="day-toggle" id="day-Vi" type="button">Vi</button>
+            <button class="day-toggle" id="day-Sa" type="button">Sa</button>
+            <button class="day-toggle" id="day-Do" type="button">Do</button>
+          </div>
+
+          <div class="label">Repetición</div>
+          <select id="repeat">
+            <option value="weekly" selected>Se repite una por semana</option>
+            <option value="monthly">Se repite una por mes</option>
+            <option value="none">No se repite</option>
+          </select>
+
+          <div class="actions">
+            <button class="action-btn" id="saveBtn" type="button">Guardar</button>
+            <button class="action-btn" id="clearBtn" type="button">Limpiar</button>
+            <button class="action-btn danger" id="deleteBtn" type="button">Borrar</button>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <div class="section-title" style="margin:0; font-size:56px;">Editar</div>
+          <div class="row-scroll" id="editRow" style="padding-top:12px;"></div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

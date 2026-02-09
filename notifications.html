@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Notificaciones</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body data-page="notifications">
+  <div class="page">
+    <div class="phone">
+
+      <div class="topbar" style="justify-content:flex-start;">
+        <button class="top-left-back" id="notifBack">Volver</button>
+        <div style="flex:1"></div>
+        <button class="icon-btn dark" aria-label="Usuario" disabled><span data-icon="user"></span></button>
+      </div>
+
+      <div class="panel">
+        <div class="h1">Notificaciones</div>
+        <div style="text-align:center; font-weight:900; margin-top:-10px;">Hoy</div>
+
+        <div class="section">
+          <div class="list" id="notifList"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

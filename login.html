@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Iniciar Sesión</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body data-page="login">
+  <div class="page">
+    <div class="phone">
+
+      <div style="display:flex; justify-content:center; margin:8px 0 14px;">
+        <div class="icon-btn dark" style="width:96px;height:96px;border-radius:50%;">
+          <span data-icon="user"></span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="h1" style="margin-top:0;">Iniciar Sesión</div>
+
+        <form class="form" id="loginForm">
+          <div class="label">Correo electrónico</div>
+          <input id="email" type="email" placeholder="tucorreo@ejemplo.com" required/>
+
+          <div class="label">Contraseña</div>
+          <input id="password" type="password" placeholder="**********" required/>
+          <div style="font-weight:800; color:#333; font-size:14px;">Mínimo de caracteres 10</div>
+
+          <div class="actions" style="margin-top:14px;">
+            <button class="action-btn" type="submit" style="font-size:34px;">Entrar</button>
+            <button class="action-btn" type="button" id="btnCreate" style="font-size:26px;">Crear<br/>Cuenta</button>
+          </div>
+        </form>
+      </div>
+
+      <button class="small-center-btn" id="backHome">Volver</button>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
