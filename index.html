@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>Descuentos Hoy</title>
   <link rel="stylesheet" href="styles.css"/>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e10606">
 </head>
 <body data-page="home">
   <div class="page">
@@ -18,7 +20,6 @@
 
           <div style="position:relative;">
             <button class="icon-btn" id="btnBell" aria-label="Notificaciones"><span data-icon="bell"></span></button>
-            <!-- puntito si hay notifs sin leer -->
             <span id="notifDot" style="display:none;position:absolute;right:4px;top:4px;width:12px;height:12px;background:#000;border-radius:999px;"></span>
           </div>
 
@@ -38,22 +39,24 @@
         </div>
       </div>
 
-      <div class="calendar panel" style="margin-top:18px;">
+      <div class="calendar panel" style="margin-top:14px;">
         <div class="h2" style="margin-bottom:10px;">Calendario</div>
 
         <div class="calendar-grid">
-          <div class="day-col"><div class="day-head">Lun</div></div>
-          <div class="day-col"><div class="day-head">Mar</div></div>
-          <div class="day-col"><div class="day-head">Mie</div></div>
-          <div class="day-col"><div class="day-head">Jue</div></div>
-          <div class="day-col"><div class="day-head">Vie</div></div>
-          <div class="day-col"><div class="day-head">Sab</div></div>
-          <div class="day-col"><div class="day-head">Dom</div></div>
+          <div class="day-col"><div class="day-head">Lun</div><div id="cal-Lu"></div></div>
+          <div class="day-col"><div class="day-head">Mar</div><div id="cal-Ma"></div></div>
+          <div class="day-col"><div class="day-head">Mie</div><div id="cal-Mi"></div></div>
+          <div class="day-col"><div class="day-head">Jue</div><div id="cal-Ju"></div></div>
+          <div class="day-col"><div class="day-head">Vie</div><div id="cal-Vi"></div></div>
+          <div class="day-col"><div class="day-head">Sab</div><div id="cal-Sa"></div></div>
+          <div class="day-col"><div class="day-head">Dom</div><div id="cal-Do"></div></div>
         </div>
       </div>
 
     </div>
   </div>
+
+  <div class="toast" id="toast"></div>
 
   <script src="app.js"></script>
 </body>

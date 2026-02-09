@@ -1,4 +1,19 @@
 /* =========================
+   PWA / Service Worker
+========================= */
+async function registerSW() {
+  if (!("serviceWorker" in navigator)) return null;
+  try {
+    const reg = await navigator.serviceWorker.register("sw.js");
+    return reg;
+  } catch {
+    return null;
+  }
+}
+
+let SW_REG = null;
+
+/* =========================
    Storage helpers
 ========================= */
 const LS_KEYS = {
@@ -40,6 +55,50 @@ function setReadSet(setObj) {
 }
 
 /* =========================
+   Toast
+========================= */
+function toast(msg) {
+  const t = document.getElementById("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.style.display = "block";
+  clearTimeout(window.__toastTimer);
+  window.__toastTimer = setTimeout(() => {
+    t.style.display = "none";
+  }, 2200);
+}
+
+/* =========================
+   Notifications (Web)
+========================= */
+async function ensureNotificationPermission() {
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") return false;
+
+  // Pedimos permiso solo cuando realmente se necesita (ej: al guardar)
+  const res = await Notification.requestPermission();
+  return res === "granted";
+}
+
+async function showSystemNotification(title, body) {
+  // requiere HTTPS o localhost + SW
+  if (!SW_REG) return;
+  const ok = await ensureNotificationPermission();
+  if (!ok) return;
+
+  try {
+    await SW_REG.showNotification(title, {
+      body,
+      icon: "icon-192.png",
+      badge: "icon-192.png"
+    });
+  } catch {
+    // si falla, al menos toast
+  }
+}
+
+/* =========================
    Icons (SVG inline)
 ========================= */
 const ICONS = {
@@ -76,7 +135,6 @@ function mountIcon(el, svg) {
 function go(url) { window.location.href = url; }
 
 function initTopbar() {
-  // Icons in header
   document.querySelectorAll("[data-icon='help']").forEach(el => mountIcon(el, ICONS.help));
   document.querySelectorAll("[data-icon='bell']").forEach(el => mountIcon(el, ICONS.bell));
   document.querySelectorAll("[data-icon='user']").forEach(el => mountIcon(el, ICONS.user));
@@ -98,31 +156,7 @@ function initTopbar() {
 }
 
 /* =========================
-   Notifications builder
-========================= */
-function discountToNotification(d) {
-  return {
-    id: d.id,
-    store: d.storeName || "Tienda",
-    desc: d.description || "",
-    value: d.discountValue || "",
-    entity: d.entity || "",
-    days: d.days || [],
-    repeat: d.repeat || "none",
-    createdAt: d.createdAt || Date.now()
-  };
-}
-
-function prettyValue(v) {
-  // Dejá lo que el usuario escribió, pero si es porcentaje asegurá el %
-  if (!v) return "";
-  const s = String(v).trim();
-  if (/^\d+%$/.test(s)) return s;
-  return s;
-}
-
-/* =========================
-   Index (Home)
+   Home (Inicio)
 ========================= */
 function initHome() {
   const listEl = document.getElementById("homeList");
@@ -132,76 +166,94 @@ function initHome() {
   const discounts = getDiscounts();
   const readSet = getReadSet();
 
-  // Notif "sin leer"
   const unread = discounts.some(d => !readSet.has(d.id));
   if (notifDotEl) notifDotEl.style.display = unread ? "block" : "none";
 
-  // Row of stores (chips)
+  // Chips de tiendas (vacío si no hay datos)
   if (chipsEl) {
     chipsEl.innerHTML = "";
-    const uniqueStores = [...new Map(discounts.map(d => [d.storeName || "Tienda", d])).values()]
-      .slice(0, 10);
-
-    if (uniqueStores.length === 0) {
-      uniqueStores.push({ storeName: "Tienda" }, { storeName: "Tienda" }, { storeName: "Tienda" });
-    }
+    const uniqueStores = [...new Map(discounts.map(d => [(d.storeName||"").trim(), d])).values()]
+      .filter(d => (d.storeName||"").trim().length > 0)
+      .slice(0, 12);
 
     uniqueStores.forEach(d => {
       const div = document.createElement("div");
       div.className = "store-chip";
       div.innerHTML = `
-        <div class="store-icon">${ICONS.store}</div>
-        ${d.storeName || "Tienda"}
+        <div class="store-icon" style="overflow:hidden">
+          ${d.image ? `<img src="${d.image}" alt="store" style="width:100%;height:100%;object-fit:cover">` : ICONS.store}
+        </div>
+        ${escapeHTML(d.storeName)}
       `;
       chipsEl.appendChild(div);
     });
   }
 
-  // List items (today-ish: show all, simplest)
+  // Lista del día (vacío real)
   if (listEl) {
     listEl.innerHTML = "";
-    if (discounts.length === 0) {
-      // Placeholders
-      const placeholders = [
-        { storeName:"Tienda x", description:"Frutas y Verduras", discountValue:"30%" },
-        { storeName:"Tienda x", description:"Segunda unidad calzado", discountValue:"-500$" },
-        { storeName:"Tienda x", description:"Pizza y faina", discountValue:"2x1" },
-      ];
-      placeholders.forEach(p => listEl.appendChild(renderDiscountCard(p)));
-      return;
-    }
-
-    // newest first
     discounts
       .slice()
       .sort((a,b) => (b.createdAt||0) - (a.createdAt||0))
-      .slice(0, 8)
       .forEach(d => listEl.appendChild(renderDiscountCard(d)));
   }
 
-  // Calendar just visual columns like tu mock
-  // (por ahora vacío, se puede llenar más adelante)
+  // Calendario funcional
+  renderCalendar(discounts);
 }
 
 function renderDiscountCard(d) {
   const wrap = document.createElement("div");
   wrap.className = "card-item";
   wrap.innerHTML = `
-    <div class="leftIcon">${ICONS.store}</div>
+    <div class="leftIcon" style="overflow:hidden">
+      ${d.image ? `<img src="${d.image}" alt="store" style="width:100%;height:100%;object-fit:cover">` : ICONS.store}
+    </div>
     <div class="mid">
-      <p class="title">${escapeHTML(d.storeName || "Tienda x")}</p>
+      <p class="title">${escapeHTML(d.storeName || "")}</p>
       <p class="desc">${escapeHTML(d.description || "")}</p>
     </div>
     <div class="right">
       <p class="label">Descuento</p>
-      <p class="value">${escapeHTML(prettyValue(d.discountValue || ""))}</p>
+      <p class="value">${escapeHTML(String(d.discountValue || ""))}</p>
     </div>
   `;
   return wrap;
 }
 
+function renderCalendar(discounts) {
+  const dayIds = ["Lu","Ma","Mi","Ju","Vi","Sa","Do"];
+  const buckets = Object.fromEntries(dayIds.map(d => [d, []]));
+
+  discounts.forEach(d => {
+    (d.days || []).forEach(day => {
+      if (buckets[day]) buckets[day].push(d);
+    });
+  });
+
+  dayIds.forEach(day => {
+    const col = document.getElementById(`cal-${day}`);
+    if (!col) return;
+    col.innerHTML = "";
+
+    // orden: más nuevos arriba
+    buckets[day]
+      .slice()
+      .sort((a,b) => (b.createdAt||0)-(a.createdAt||0))
+      .forEach(d => {
+        const div = document.createElement("div");
+        div.className = "cal-item";
+        div.innerHTML = `
+          <div class="t">${escapeHTML(d.storeName || "")}</div>
+          <div class="v">${escapeHTML(String(d.discountValue || ""))}</div>
+        `;
+        col.appendChild(div);
+      });
+  });
+}
+
 /* =========================
-   Login
+   Login (igual que antes)
 ========================= */
 function initLogin() {
   const form = document.getElementById("loginForm");
@@ -212,9 +264,7 @@ function initLogin() {
   if (!form) return;
 
   const user = loadJSON(LS_KEYS.USER, null);
-  if (user?.email) {
-    document.getElementById("email").value = user.email;
-  }
+  if (user?.email) document.getElementById("email").value = user.email;
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -226,19 +276,16 @@ function initLogin() {
       return;
     }
     saveJSON(LS_KEYS.USER, { email, loggedIn: true, at: Date.now() });
-    alert("Sesión iniciada.");
+    toast("Sesión iniciada");
     go("index.html");
   });
 
   const create = document.getElementById("btnCreate");
   if (create) create.addEventListener("click", () => {
-    alert("Cuenta creada (demo). Ya podés entrar.");
+    toast("Cuenta creada (demo)");
   });
 }
 
-/* =========================
-   Help
-========================= */
 function initHelp() {
   const back = document.getElementById("helpBack");
   if (back) back.addEventListener("click", () => history.back());
@@ -256,31 +303,9 @@ function initNotifications() {
   const readSet = getReadSet();
 
   if (!listEl) return;
-
   listEl.innerHTML = "";
-  if (discounts.length === 0) {
-    listEl.appendChild(renderDiscountCard({
-      storeName:"Tienda x",
-      description:"Frutas y Verduras",
-      discountValue:"30%"
-    }));
-    listEl.appendChild(renderDiscountCard({
-      storeName:"Tienda x",
-      description:"Frutas y Verduras",
-      discountValue:"30%"
-    }));
-    return;
-  }
 
-  discounts.forEach((d, idx) => {
-    // "fecha" tipo tu mock (intercalada)
-    if (idx === 1 || idx === 3) {
-      const hr = document.createElement("div");
-      hr.className = "hr-date";
-      hr.textContent = new Date(d.createdAt || Date.now()).toLocaleDateString();
-      listEl.appendChild(hr);
-    }
-
+  discounts.forEach(d => {
     const card = renderDiscountCard(d);
     card.style.opacity = readSet.has(d.id) ? "0.75" : "1";
     card.style.cursor = "pointer";
@@ -294,7 +319,7 @@ function initNotifications() {
 }
 
 /* =========================
-   Config page (create/edit/delete)
+   Config page
 ========================= */
 const ENTITIES = [
   "BROU RECOMPENSA",
@@ -311,7 +336,6 @@ const ENTITIES = [
 const DISCOUNT_PRESETS = ["2x1", "3x2", "15%", "30%"];
 
 const PRESET_IMAGES = [
-  // data-url SVGs simples (no dependés de imágenes)
   `data:image/svg+xml;utf8,${encodeURIComponent(svgPreset("#18b7c9","#ff7a7a","#fff"))}`,
   `data:image/svg+xml;utf8,${encodeURIComponent(svgPreset("#18b7c9","#ffd36a","#fff"))}`,
   `data:image/svg+xml;utf8,${encodeURIComponent(svgPreset("#18b7c9","#9bffb0","#fff"))}`,
@@ -335,19 +359,22 @@ function initConfig() {
   const back = document.getElementById("configBack");
   if (back) back.addEventListener("click", () => go("index.html"));
 
-  // mount presets
+  // Entidades
   const entitySel = document.getElementById("entity");
+  entitySel.innerHTML = "";
   ENTITIES.forEach(e => {
     const opt = document.createElement("option");
     opt.value = e; opt.textContent = e;
     entitySel.appendChild(opt);
   });
 
-  const discountSel = document.getElementById("discountPreset");
+  // Opciones de descuento (datalist)
+  const dl = document.getElementById("discountOptions");
+  dl.innerHTML = "";
   DISCOUNT_PRESETS.forEach(v => {
     const opt = document.createElement("option");
-    opt.value = v; opt.textContent = v;
-    discountSel.appendChild(opt);
+    opt.value = v;
+    dl.appendChild(opt);
   });
 
   // image presets row
@@ -386,40 +413,19 @@ function initConfig() {
     btn.addEventListener("click", () => btn.classList.toggle("active"));
   });
 
-  // Save / Update
-  const saveBtn = document.getElementById("saveBtn");
-  const deleteBtn = document.getElementById("deleteBtn");
-  const clearBtn = document.getElementById("clearBtn");
-
-  if (saveBtn) saveBtn.addEventListener("click", onSave);
-  if (deleteBtn) deleteBtn.addEventListener("click", onDelete);
-  if (clearBtn) clearBtn.addEventListener("click", clearForm);
-
-  // Link preset -> fill discount input
-  discountSel.addEventListener("change", () => {
-    const custom = document.getElementById("discountValue");
-    if (custom) custom.value = discountSel.value;
-  });
+  document.getElementById("saveBtn")?.addEventListener("click", onSave);
+  document.getElementById("deleteBtn")?.addEventListener("click", onDelete);
+  document.getElementById("clearBtn")?.addEventListener("click", clearForm);
 
   renderEditRow();
 }
 
 function getSelectedDays() {
-  const map = [
-    { id:"Lu", key:"Lu" },
-    { id:"Ma", key:"Ma" },
-    { id:"Mi", key:"Mi" },
-    { id:"Ju", key:"Ju" },
-    { id:"Vi", key:"Vi" },
-    { id:"Sa", key:"Sa" },
-    { id:"Do", key:"Do" },
-  ];
-  return map
-    .filter(x => document.getElementById(`day-${x.id}`)?.classList.contains("active"))
-    .map(x => x.key);
+  const map = ["Lu","Ma","Mi","Ju","Vi","Sa","Do"];
+  return map.filter(day => document.getElementById(`day-${day}`)?.classList.contains("active"));
 }
 
-function onSave() {
+async function onSave() {
   const storeName = document.getElementById("storeName").value.trim();
   const description = document.getElementById("description").value.trim();
   const discountValue = document.getElementById("discountValue").value.trim();
@@ -442,34 +448,40 @@ function onSave() {
       image: currentImage,
       updatedAt: Date.now()
     };
+    setDiscounts(discounts);
+    toast("Descuento actualizado");
   } else {
-    discounts.push({
+    const newItem = {
       id: uid(),
       storeName, description, discountValue, entity, repeat, days,
       image: currentImage,
       createdAt: Date.now()
-    });
+    };
+    discounts.push(newItem);
+    setDiscounts(discounts);
+    toast("Descuento creado");
+
+    // notificación sistema (si se puede)
+    await showSystemNotification("Nuevo descuento", `${storeName}: ${discountValue}`);
   }
 
-  setDiscounts(discounts);
   clearForm();
   renderEditRow();
-  alert(editingId ? "Descuento actualizado." : "Descuento creado.");
 }
 
 function onDelete() {
   if (!editingId) { alert("Elegí un descuento de abajo para borrar."); return; }
+
   const discounts = getDiscounts().filter(d => d.id !== editingId);
   setDiscounts(discounts);
 
-  // también lo marcamos como leído para que no quede “pendiente”
   const readSet = getReadSet();
   readSet.add(editingId);
   setReadSet(readSet);
 
   clearForm();
   renderEditRow();
-  alert("Descuento eliminado.");
+  toast("Descuento eliminado");
 }
 
 function clearForm() {
@@ -479,17 +491,14 @@ function clearForm() {
   document.getElementById("discountValue").value = "";
   document.getElementById("entity").value = ENTITIES[0];
   document.getElementById("repeat").value = "weekly";
-  document.getElementById("discountPreset").value = "";
-
   document.querySelectorAll(".day-toggle").forEach(btn => btn.classList.remove("active"));
 
-  // reset image
   currentImage = PRESET_IMAGES[0];
   const thumbImg = document.getElementById("thumbImg");
   if (thumbImg) thumbImg.src = currentImage;
 
-  const title = document.getElementById("saveBtn");
-  if (title) title.textContent = "Guardar";
+  const saveBtn = document.getElementById("saveBtn");
+  if (saveBtn) saveBtn.textContent = "Guardar";
 }
 
 function renderEditRow() {
@@ -499,15 +508,7 @@ function renderEditRow() {
   const discounts = getDiscounts().slice().sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
   row.innerHTML = "";
 
-  const show = discounts.slice(0, 10);
-  if (show.length === 0) {
-    ["Tienda x","Tienda y","Tienda c","Tienda a","Tienda w"].forEach(name => {
-      row.appendChild(renderEditChip({ storeName:name }));
-    });
-    return;
-  }
-
-  show.forEach(d => row.appendChild(renderEditChip(d)));
+  discounts.forEach(d => row.appendChild(renderEditChip(d)));
 }
 
 function renderEditChip(d) {
@@ -522,11 +523,8 @@ function renderEditChip(d) {
     ${escapeHTML(d.storeName || "Tienda")}
   `;
 
-  // Si tiene id => es clickeable para editar
-  if (d.id) {
-    div.style.cursor = "pointer";
-    div.addEventListener("click", () => loadForEdit(d.id));
-  }
+  div.style.cursor = "pointer";
+  div.addEventListener("click", () => loadForEdit(d.id));
   return div;
 }
 
@@ -536,7 +534,6 @@ function loadForEdit(id) {
   if (!d) return;
 
   editingId = id;
-
   document.getElementById("storeName").value = d.storeName || "";
   document.getElementById("description").value = d.description || "";
   document.getElementById("discountValue").value = d.discountValue || "";
@@ -581,7 +578,9 @@ function fileToDataURL(file){
 /* =========================
    Bootstrap per page
 ========================= */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  SW_REG = await registerSW();
+
   initTopbar();
 
   const page = document.body.getAttribute("data-page");
