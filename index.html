@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Descuentos Hoy</title>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body data-page="home">
+  <div class="page">
+    <div class="phone">
+
+      <div class="topbar">
+        <button class="btn-pill" id="btnEdit">Editar</button>
+
+        <div class="icon-row">
+          <button class="icon-btn" id="btnHelp" aria-label="Ayuda"><span data-icon="help"></span></button>
+
+          <div style="position:relative;">
+            <button class="icon-btn" id="btnBell" aria-label="Notificaciones"><span data-icon="bell"></span></button>
+            <!-- puntito si hay notifs sin leer -->
+            <span id="notifDot" style="display:none;position:absolute;right:4px;top:4px;width:12px;height:12px;background:#000;border-radius:999px;"></span>
+          </div>
+
+          <button class="icon-btn dark" id="btnUser" aria-label="Login"><span data-icon="user"></span></button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="h1">Descuentos Hoy</div>
+
+        <div class="section">
+          <div class="row-scroll" id="homeStores"></div>
+        </div>
+
+        <div class="section">
+          <div class="list" id="homeList"></div>
+        </div>
+      </div>
+
+      <div class="calendar panel" style="margin-top:18px;">
+        <div class="h2" style="margin-bottom:10px;">Calendario</div>
+
+        <div class="calendar-grid">
+          <div class="day-col"><div class="day-head">Lun</div></div>
+          <div class="day-col"><div class="day-head">Mar</div></div>
+          <div class="day-col"><div class="day-head">Mie</div></div>
+          <div class="day-col"><div class="day-head">Jue</div></div>
+          <div class="day-col"><div class="day-head">Vie</div></div>
+          <div class="day-col"><div class="day-head">Sab</div></div>
+          <div class="day-col"><div class="day-head">Dom</div></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
